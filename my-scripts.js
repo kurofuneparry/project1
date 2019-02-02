@@ -1,4 +1,4 @@
-// Defines an Item as an object with text and state
+// An Item has "text" and "state" strings and can be "clicked"
 class Item {
 	constructor(text, state="none") {
 		this.text = text;
@@ -8,26 +8,25 @@ class Item {
 	// When clicked an item progresses from new to crossed out to removed
 	clicked() { 
 		if (this.state == "none") {
-			this.state = "line-through";
-		} else if (this.state == "line-through") {
-			this.state = "removed";
+			this.state = "strike";
+		} else if (this.state == "strike") {
+			this.state = "invisible";
 		}
 	}
 }
 
-// Gets the list from storage
+// Gets the Items from localStorage
 function getItems() {
-	// If items isn't in localStorage then make it as an array
+	// If localStorage doesn't have items, then add it as a string representing an empty array
 	if(localStorage.getItem("items") == null) {
 		localStorage.setItem("items", "[]");
 	}
 
-	// The items are kept as a string
-	// JSON.parse turns the string into an array of objects
+	// JSON.parse interprets the string as an array of objects
 	string = localStorage.getItem("items");
 	parsed = JSON.parse(string);
 
-	// The parsed array is recreated as Item objects
+	// The elements in the array are made into Items
 	result = [];
 	for (let i=0; i < parsed.length; i++) {
 		result.push(new Item(parsed[i].text, parsed[i].state));
@@ -35,9 +34,20 @@ function getItems() {
 	return result;
 }
 
-// Puts items from localStorage onto the webpage
+// The user creates a new Item 
+function createItem() {
+	userInput = prompt("Your new item prompt goes here")
+	newItem = new Item(userInput)
+
+	items = getItems();
+	items.push(newItem);
+	localStorage.setItem("items", JSON.stringify(items))
+	update();
+}
+
+// Puts Items onto the webpage
 function update() {
-	// The items and webpage elements are gathered
+	// The Items and webpage elements are gathered
 	items = getItems();
 	list = document.getElementById("list");
 	container = document.getElementById("container");
@@ -48,39 +58,25 @@ function update() {
 	container.id = "container";
 	list.appendChild(container);
 
-	// Each item that hasn't been removed is added
+	// Each Item is added
 	for (let i=0; i < items.length; i++) {
-		if (items[i].state !== "removed") {
+		// A div representing this item is created
+		div = document.createElement("div");
+		div.innerHTML = items[i].text;
+		div.classList.add(items[i].state);
 
-			// A div representing this item is created
-			div = document.createElement("div");
-			div.innerHTML = items[i].text;
-			div.style.textDecoration = items[i].state;
-
-			// A listener function is called if the item is clicked
-			div.addEventListener("click", function() {
-				items[i].clicked()
-				localStorage.setItem("items", JSON.stringify(items));
-				update();
-			})
-
-			// The item is added to the list
-			container.appendChild(div);
+		// This listener function enacts a click on this Item
+		function listener() {
+			items[i].clicked()
+			localStorage.setItem("items", JSON.stringify(items));
+			update();
 		}
+		// The listener function is used when this div is clicked
+		div.addEventListener("click", listener);
+
+		// The div is added to the webpage
+		container.appendChild(div);
 	}
 }
 
 update();
-
-// The user creates a new item
-function createItem() {
-	// The new item is created
-	text = prompt("What would you like to add to the list?");
-	item = new Item(text);
-
-	// The new item is added to local storage
-	items = getItems();
-	items.push(item);
-	localStorage.setItem("items", JSON.stringify(items));
-	update();
-}
